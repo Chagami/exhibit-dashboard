@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museum Exhibit Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .areas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .area-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border-left: 6px solid #4CAF50;
+        }
+
+        .area-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .area-card.warning {
+            border-left-color: #FF9800;
+        }
+
+        .area-card.critical {
+            border-left-color: #f44336;
+        }
+
+        .area-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .area-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #333;
+            flex-grow: 1;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .status-on-track {
+            background: #E8F5E8;
+            color: #4CAF50;
+        }
+
+        .status-attention {
+            background: #FFF3E0;
+            color: #FF9800;
+        }
+
+        .status-critical {
+            background: #FFEBEE;
+            color: #f44336;
+        }
+
+        .area-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .exhibits-preview {
+            display: none;
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .exhibits-preview.expanded {
+            display: block;
+        }
+
+        .exhibit-item {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #ddd;
+        }
+
+        .exhibit-item.on-track {
+            border-left-color: #4CAF50;
+        }
+
+        .exhibit-item.warning {
+            border-left-color: #FF9800;
+        }
+
+        .exhibit-item.critical {
+            border-left-color: #f44336;
+        }
+
+        .exhibit-info {
+            flex-grow: 1;
+        }
+
+        .exhibit-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .exhibit-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .exhibit-status {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .expand-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+        }
+
+        .expand-btn:hover {
+            background: #5a67d8;
+        }
+
+        .api-config {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .config-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+        }
+
+        .config-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .config-btn:hover {
+            background: #45a049;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏛️ Museum Exhibit Dashboard</h1>
+        <p>Real-time overview of all museum areas and exhibits</p>
+    </div>
+
+    <div class="dashboard">
+        <div class="api-config" id="apiConfig">
+            <h3>Asana API Configuration</h3>
+            <input type="text" id="apiToken" class="config-input" placeholder="Enter your Asana Personal Access Token">
+            <input type="text" id="projectId" class="config-input" placeholder="Enter your Asana Project ID">
+            <button class="config-btn" onclick="loadDashboard()">Load Dashboard</button>
+            <p style="margin-top: 10px; font-size: 0.9rem; color: #666;">
+                Get your token from Asana → My Profile Settings → Apps → Personal Access Tokens
+            </p>
+        </div>
+
+        <div id="loadingMessage" class="loading" style="display: none;">
+            Loading exhibit data from Asana...
+        </div>
+
+        <div class="areas-grid" id="areasGrid" style="display: none;">
+            <!-- Areas will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        // Mock data for demonstration
+        const mockData = {
+            "Ancient Civilizations": {
+                status: "on-track",
+                totalExhibits: 8,
+                activeProjects: 3,
+                upcomingDeadlines: 1,
+                exhibits: [
+                    {
+                        name: "Egyptian Mummy Display",
+                        status: "on-track",
+                        details: "Installation 85% complete • Due: Next Friday",
+                        assignee: "Sarah Chen",
+                        priority: "High"
+                    },
+                    {
+                        name: "Roman Artifacts Renovation",
+                        status: "warning",
+                        details: "Lighting issues identified • Due: Dec 15",
+                        assignee: "Mike Rodriguez",
+                        priority: "Medium"
+                    },
+                    {
+                        name: "Greek Pottery Interactive",
+                        status: "on-track",
+                        details: "Content review in progress • Due: Jan 10",
+                        assignee: "Lisa Park",
+                        priority: "Low"
+                    }
+                ]
+            },
+            "Natural History": {
+                status: "attention",
+                totalExhibits: 12,
+                activeProjects: 5,
+                upcomingDeadlines: 3,
+                exhibits: [
+                    {
+                        name: "Dinosaur Hall Upgrade",
+                        status: "critical",
+                        details: "Behind schedule, budget concerns • Due: Nov 30",
+                        assignee: "Tom Wilson",
+                        priority: "High"
+                    },
+                    {
+                        name: "Butterfly Garden Maintenance",
+                        status: "on-track",
+                        details: "Monthly cleaning scheduled • Due: Dec 5",
+                        assignee: "Emma Davis",
+                        priority: "Medium"
+                    }
+                ]
+            },
+            "Modern Art": {
+                status: "on-track",
+                totalExhibits: 6,
+                activeProjects: 2,
+                upcomingDeadlines: 0,
+                exhibits: [
+                    {
+                        name: "Contemporary Sculpture Display",
+                        status: "on-track",
+                        details: "Final pieces arriving tomorrow • Due: Dec 20",
+                        assignee: "Alex Kim",
+                        priority: "Medium"
+                    }
+                ]
+            },
+            "Space & Science": {
+                status: "critical",
+                totalExhibits: 9,
+                activeProjects: 4,
+                upcomingDeadlines: 2,
+                exhibits: [
+                    {
+                        name: "Planetarium Technical Upgrade",
+                        status: "critical",
+                        details: "Equipment delays, vendor issues • Due: Nov 25",
+                        assignee: "Jordan Liu",
+                        priority: "Critical"
+                    },
+                    {
+                        name: "Mars Rover Replica",
+                        status: "warning",
+                        details: "Awaiting final components • Due: Dec 12",
+                        assignee: "Sam Patel",
+                        priority: "High"
+                    }
+                ]
+            }
+        };
+
+        function loadDashboard() {
+            const apiToken = document.getElementById('apiToken').value;
+            const projectId = document.getElementById('projectId').value;
+
+            if (!apiToken && !projectId) {
+                // Show mock data for demo
+                showMockData();
+                return;
+            }
+
+            if (!apiToken || !projectId) {
+                alert('Please enter both API token and Project ID, or leave both empty for demo mode');
+                return;
+            }
+
+            document.getElementById('apiConfig').style.display = 'none';
+            document.getElementById('loadingMessage').style.display = 'block';
+
+            // In a real implementation, you'd call the Asana API here
+            setTimeout(() => {
+                loadAsanaData(apiToken, projectId);
+            }, 2000);
+        }
+
+        function showMockData() {
+            document.getElementById('apiConfig').style.display = 'none';
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('areasGrid').style.display = 'grid';
+            renderAreas(mockData);
+        }
+
+        async function loadAsanaData(token, projectId) {
+            try {
+                const response = await fetch(`https://app.asana.com/api/1.0/projects/${projectId}/tasks`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data from Asana');
+                }
+
+                const data = await response.json();
+                const processedData = processAsanaData(data);
+                
+                document.getElementById('loadingMessage').style.display = 'none';
+                document.getElementById('areasGrid').style.display = 'grid';
+                renderAreas(processedData);
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading data from Asana. Showing demo data instead.');
+                showMockData();
+            }
+        }
+
+        function processAsanaData(asanaData) {
+            // Process Asana tasks into our dashboard format
+            // This would parse tasks, group by custom fields or sections, etc.
+            // For now, return mock data structure
+            return mockData;
+        }
+
+        function renderAreas(data) {
+            const grid = document.getElementById('areasGrid');
+            grid.innerHTML = '';
+
+            Object.entries(data).forEach(([areaName, areaData]) => {
+                const card = createAreaCard(areaName, areaData);
+                grid.appendChild(card);
+            });
+        }
+
+        function createAreaCard(name, data) {
+            const card = document.createElement('div');
+            card.className = `area-card ${data.status === 'attention' ? 'warning' : data.status === 'critical' ? 'critical' : ''}`;
+            
+            card.innerHTML = `
+                <div class="area-header">
+                    <div class="area-title">${name}</div>
+                    <div class="status-badge status-${data.status === 'on-track' ? 'on-track' : data.status === 'attention' ? 'attention' : 'critical'}">
+                        ${data.status === 'on-track' ? 'On Track' : data.status === 'attention' ? 'Needs Attention' : 'Critical'}
+                    </div>
+                </div>
+                
+                <div class="area-stats">
+                    <div class="stat">
+                        <div class="stat-number">${data.totalExhibits}</div>
+                        <div class="stat-label">Total Exhibits</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">${data.activeProjects}</div>
+                        <div class="stat-label">Active Projects</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">${data.upcomingDeadlines}</div>
+                        <div class="stat-label">Due Soon</div>
+                    </div>
+                </div>
+                
+                <button class="expand-btn" onclick="toggleExhibits(this)">View Exhibits</button>
+                
+                <div class="exhibits-preview">
+                    ${data.exhibits.map(exhibit => `
+                        <div class="exhibit-item ${exhibit.status}">
+                            <div class="exhibit-info">
+                                <div class="exhibit-name">${exhibit.name}</div>
+                                <div class="exhibit-details">${exhibit.details}</div>
+                            </div>
+                            <div class="exhibit-status status-${exhibit.status}">${exhibit.status === 'on-track' ? 'On Track' : exhibit.status === 'warning' ? 'Warning' : 'Critical'}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            return card;
+        }
+
+        function toggleExhibits(button) {
+            const exhibitsDiv = button.parentNode.querySelector('.exhibits-preview');
+            exhibitsDiv.classList.toggle('expanded');
+            button.textContent = exhibitsDiv.classList.contains('expanded') ? 'Hide Exhibits' : 'View Exhibits';
+        }
+
+        // Auto-refresh every 5 minutes in production
+        // setInterval(loadDashboard, 300000);
+    </script>
+</body>
+</html>
